@@ -1,38 +1,46 @@
 package com.vnteam
 
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import java.io.File
 import java.util.Properties
 
-class SecretsPlugin : Plugin<Project> {
+
+class KMPSecretsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
+        val extension =
+            project.extensions.create("secretsConfig", SecretsPluginExtension::class.java, project)
+
         project.tasks.register("generateSecrets") {
-            val localProperties = project.rootProject.file("local.properties")
-            val kotlinSrcDir = project.file("${project.projectDir}/src/commonMain/kotlin")
-            val configDir = project.file("$kotlinSrcDir/secrets")
-            val configFile = project.file("$configDir/Secrets.kt")
             doLast {
+                val localProperties = File(extension.propertiesFile)
+                val kotlinSrcDir = File(extension.outputDir)
+                val configDir = File("$kotlinSrcDir/secrets")
+                val configFile = File("$configDir/Secrets.kt")
+
                 if (!localProperties.exists()) {
-                    throw GradleException("local.properties file not found!")
+                    throw RuntimeException("local.properties file not found at ${localProperties.absolutePath}")
                 }
+
                 val properties = Properties().apply {
                     load(localProperties.inputStream())
                 }
+
                 if (!configDir.exists()) {
                     configDir.mkdirs()
                 }
+
                 fun isValidKey(key: String): Boolean {
                     return key.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*$"))
                 }
 
-                val packagePath =
-                    configDir.relativeTo(project.file("${project.projectDir}/src/commonMain/kotlin"))
+                val packagePath = configDir.relativeTo(kotlinSrcDir)
                 val packageName = packagePath.toString().replace("/", ".").replace("\\", ".")
+
                 val configContent = buildString {
                     appendLine("package $packageName")
                     appendLine()
-                    appendLine("object Properties {")
+                    appendLine("object Secrets {")
 
                     properties.forEach { (keyAny, value) ->
                         val key = keyAny.toString()
@@ -45,10 +53,12 @@ class SecretsPlugin : Plugin<Project> {
                 }
 
                 configFile.writeText(configContent)
+                println("✅ Secrets.kt successfully generated at ${configFile.absolutePath}")
             }
         }
-        project.tasks.named("preBuild") {
-            dependsOn("generateSecrets")
+
+        project.afterEvaluate {
+            project.tasks.findByName(extension.triggerTask)?.dependsOn("generateSecrets")
         }
     }
 }
