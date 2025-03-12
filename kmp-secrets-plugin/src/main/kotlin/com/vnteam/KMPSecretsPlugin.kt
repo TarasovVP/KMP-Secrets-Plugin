@@ -17,7 +17,7 @@ class KMPSecretsPlugin : Plugin<Project> {
                 val kotlinSrcDir = File(extension.outputDir)
                 val configDir = File("$kotlinSrcDir/secrets")
                 val configFile = File("$configDir/Secrets.kt")
-
+                println("🔹 Generating secrets...")
                 if (!localProperties.exists()) {
                     throw RuntimeException("local.properties file not found at ${localProperties.absolutePath}")
                 }
@@ -40,7 +40,7 @@ class KMPSecretsPlugin : Plugin<Project> {
                 val configContent = buildString {
                     appendLine("package $packageName")
                     appendLine()
-                    appendLine("object Secrets {")
+                    appendLine("object Properties {")
 
                     properties.forEach { (keyAny, value) ->
                         val key = keyAny.toString()
@@ -58,7 +58,7 @@ class KMPSecretsPlugin : Plugin<Project> {
         }
 
         project.afterEvaluate {
-            project.tasks.findByName(extension.triggerTask)?.dependsOn("generateSecrets")
+            project.tasks.findByName("preBuild")?.dependsOn("generateSecrets")
         }
     }
 }
