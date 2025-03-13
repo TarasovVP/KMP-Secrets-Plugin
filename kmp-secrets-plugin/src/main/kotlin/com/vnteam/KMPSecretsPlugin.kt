@@ -5,25 +5,31 @@ import org.gradle.api.Project
 import java.io.File
 import java.util.Properties
 
-
 class KMPSecretsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         val extension =
             project.extensions.create("secretsConfig", SecretsPluginExtension::class.java, project)
 
         project.tasks.register("generateSecrets") {
-            doLast {
-                val localProperties = File(extension.propertiesFile)
+            doFirst {
+                val modulePropertiesFile = project.file("local.properties")
+                val globalPropertiesFile = project.rootProject.file("local.properties")
+
+                val propertiesFile = when {
+                    modulePropertiesFile.exists() -> modulePropertiesFile
+                    globalPropertiesFile.exists() -> globalPropertiesFile
+                    else -> throw RuntimeException("❌ No local.properties found for module: ${project.name}")
+                }
                 val kotlinSrcDir = File(extension.outputDir)
                 val configDir = File("$kotlinSrcDir/secrets")
                 val configFile = File("$configDir/Secrets.kt")
-                println("🔹 Generating secrets...")
-                if (!localProperties.exists()) {
-                    throw RuntimeException("local.properties file not found at ${localProperties.absolutePath}")
+
+                if (!propertiesFile.exists()) {
+                    throw RuntimeException("local.properties file not found at ${propertiesFile.absolutePath}")
                 }
 
                 val properties = Properties().apply {
-                    load(localProperties.inputStream())
+                    load(propertiesFile.inputStream())
                 }
 
                 if (!configDir.exists()) {
@@ -54,11 +60,27 @@ class KMPSecretsPlugin : Plugin<Project> {
 
                 configFile.writeText(configContent)
                 println("✅ Secrets.kt successfully generated at ${configFile.absolutePath}")
+
+                val gitIgnoreFile = project.file(".gitignore")
+                val relativePath = configFile.relativeTo(project.projectDir).path.replace("\\", "/")
+
+                if (!gitIgnoreFile.exists()) {
+                    println("🛠️ .gitignore not found, creating a new one...")
+                    gitIgnoreFile.writeText("# Auto-generated .gitignore\n$relativePath\n")
+                } else {
+                    val gitIgnoreContent = gitIgnoreFile.readText()
+                    if (!gitIgnoreContent.contains(relativePath)) {
+                        println("🛠️ Adding $relativePath to .gitignore...")
+                        gitIgnoreFile.appendText("\n$relativePath\n")
+                    } else {
+                        println("✅ $relativePath is already ignored in .gitignore")
+                    }
+                }
             }
         }
 
         project.afterEvaluate {
-            project.tasks.findByName("preBuild")?.dependsOn("generateSecrets")
+            project.tasks.findByName(extension.triggerTask)?.dependsOn("generateSecrets")
         }
     }
 }
