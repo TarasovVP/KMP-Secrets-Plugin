@@ -10,11 +10,7 @@ object Constants {
     const val SECRETS_OBJECT_NAME = "Properties"
     const val SECRETS_FILE_NAME = "Secrets.kt"
     const val LOCAL_PROPERTIES_FILE = "local.properties"
-
-    // Extension
-    const val DEFAULT_LOCAL_PROPERTIES = "local.properties"
     const val DEFAULT_OUTPUT_DIR = "src/commonMain/kotlin"
-    const val DEFAULT_TRIGGER_TASK = "preBuild"
 
     // Messages
     const val ERROR_NO_PROPERTIES_FOUND = "❌ No local.properties found for module: "
