@@ -20,8 +20,6 @@ class SecretsGenerator(private val project: Project, private val extension: Secr
 
         val configContent = generateSecretsContent(configDir, properties)
         configFile.writeText(configContent)
-
-        println("${Constants.SUCCESS_SECRETS_GENERATED}${configFile.absolutePath}")
         return configFile
     }
 
