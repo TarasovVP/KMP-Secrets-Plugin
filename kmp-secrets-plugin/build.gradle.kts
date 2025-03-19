@@ -2,6 +2,7 @@ plugins {
     `kotlin-dsl`
     `java-gradle-plugin`
     `maven-publish`
+    signing
 }
 
 group = "com.vnteam.kmp-secrets"
@@ -24,4 +25,8 @@ publishing {
     repositories {
         mavenLocal()
     }
+}
+
+signing {
+    sign(publishing.publications["pluginMaven"])
 }
