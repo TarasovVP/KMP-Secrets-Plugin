@@ -13,7 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+gradle.properties
 
 # Project exclude paths
 /kmp-secrets-plugin/build/
 /kmp-secrets-plugin/build/classes/kotlin/main/
+/secring.asc
