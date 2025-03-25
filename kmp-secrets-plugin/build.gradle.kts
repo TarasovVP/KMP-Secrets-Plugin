@@ -2,6 +2,7 @@ import com.vanniktech.maven.publish.SonatypeHost
 
 plugins {
     id("com.vanniktech.maven.publish") version "0.31.0-rc2"
+    alias(libs.plugins.kotlinMultiplatform) apply false
     `kotlin-dsl`
     `java-gradle-plugin`
 }

@@ -1,3 +1,5 @@
+package com.vnteam
+
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import java.io.File
@@ -25,11 +27,11 @@ class KMPSecretsPluginTest {
             SOME_OTHER_SECRET=test_secret_value
         """.trimIndent()
         )
-
+        File(projectDir, "settings.gradle.kts").writeText("rootProject.name = \"functionalTest\"")
         val result = GradleRunner.create()
             .withProjectDir(projectDir)
-            .withPluginClasspath()  // добавляет classpath плагина для теста
-            .withArguments("generateSecrets")  // задача, которую должен создать плагин
+            .withPluginClasspath()
+            .withArguments("generateSecrets")
             .build()
 
         assertEquals(TaskOutcome.SUCCESS, result.task(":generateSecrets")?.outcome)
