@@ -13,6 +13,8 @@ version = "1.0.0"
 dependencies {
     compileOnly(kotlin("gradle-plugin"))
     implementation(libs.kotlin.test)
+    testImplementation(kotlin("gradle-plugin"))
+    testImplementation(gradleTestKit())
 }
 
 gradlePlugin {
