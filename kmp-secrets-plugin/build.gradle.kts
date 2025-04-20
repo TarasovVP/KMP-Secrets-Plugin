@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.tarasovvp"
-version = "1.0.0"
+version = "1.1.0"
 
 dependencies {
     compileOnly(kotlin("gradle-plugin"))
@@ -30,7 +30,7 @@ mavenPublishing {
     coordinates(
         groupId = "io.github.tarasovvp",
         artifactId = "kmp-secrets-plugin",
-        version = "1.0.0"
+        version = "1.1.0"
     )
 
     pom {

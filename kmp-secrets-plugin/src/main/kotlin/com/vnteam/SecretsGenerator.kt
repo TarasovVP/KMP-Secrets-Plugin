@@ -56,7 +56,7 @@ class SecretsGenerator(private val project: Project, private val extension: Secr
             properties.forEach { (keyAny, value) ->
                 val key = keyAny.toString()
                 if (isValidKey(key)) {
-                    appendLine("    val $key = \"$value\"")
+                    appendLine("    const val $key = \"$value\"")
                 }
             }
 
