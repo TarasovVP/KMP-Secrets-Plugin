@@ -1,6 +1,5 @@
 package com.vnteam
 
-import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import java.io.File
 import  kotlin.test.assertEquals
@@ -11,119 +10,93 @@ import kotlin.test.assertTrue
 
 class SecretsGeneratorTest {
 
+    private fun runGenerator(
+        propsFile: File,
+        outputDir: File = File(propsFile.parentFile, "build/generated/secrets")
+    ): File {
+        outputDir.mkdirs()
+        val secretsFile = File(outputDir, Constants.SECRETS_FILE_NAME)
+        SecretsGenerator().generateSecrets(propsFile, secretsFile)
+        return secretsFile
+    }
+
     @Test
     fun `given localproperties in module dir when generateSecrets is called then use local properties file`() {
-        val project: Project = ProjectBuilder.builder().build()
-        val modulePropertiesFile = File(project.projectDir, "local.properties").apply {
+        val project = ProjectBuilder.builder().build()
+        val propsFile = File(project.projectDir, "local.properties").apply {
             writeText("API_KEY=local_key\nINVALID-KEY=xxx")
         }
-        val extension = SecretsPluginExtension(project).apply {
-            outputDir = "${project.projectDir}/build/generated" // custom output path
-        }
 
-        val generator = SecretsGenerator(project, extension)
-        val secretsFile = generator.generateSecrets()
+        val secretsFile = runGenerator(propsFile)
 
-        assertTrue(
-            secretsFile.exists(),
-            "Secrets.kt file should be created in build/generated/secrets/Secrets.kt"
-        )
+        assertTrue(secretsFile.exists())
 
         val content = secretsFile.readText()
-        assertTrue(
-            content.contains("val API_KEY = \"local_key\""),
-            "Should include valid key from local.properties"
-        )
-        assertFalse(content.contains("INVALID-KEY"), "Invalid key format should be skipped")
+        assertTrue(content.contains("const val API_KEY = \"local_key\""))
+        assertFalse(content.contains("INVALID-KEY"))
     }
 
     @Test
     fun `given no localproperties in module but present in root when generateSecrets is called then use root properties file`() {
-        val project: Project = ProjectBuilder.builder().build()
-
-        val globalPropertiesFile = File(project.rootProject.projectDir, "local.properties").apply {
+        val project = ProjectBuilder.builder().build()
+        val propsFile = File(project.rootProject.projectDir, "local.properties").apply {
             writeText("ROOT_SECRET=root_secret_value")
         }
-        val extension = SecretsPluginExtension(project)
 
-        val generator = SecretsGenerator(project, extension)
-        val secretsFile = generator.generateSecrets()
+        val secretsFile = runGenerator(propsFile)
 
-        assertTrue(
-            secretsFile.exists(),
-            "Secrets.kt should be created from rootProject local.properties"
-        )
-        val content = secretsFile.readText()
-        assertTrue(
-            content.contains("val ROOT_SECRET = \"root_secret_value\""),
-            "Should load property from root local.properties if module file not found"
-        )
+        assertTrue(secretsFile.exists())
+        assertTrue(secretsFile.readText().contains("const val ROOT_SECRET = \"root_secret_value\""))
     }
 
     @Test
     fun `given no localproperties at all when generateSecrets is called then throw exception`() {
-        val project: Project = ProjectBuilder.builder().build()
-        val extension = SecretsPluginExtension(project)
+        val tmpDir = createTempDir()
+        val propsFile = File(tmpDir, "missing.properties")
 
-        val generator = SecretsGenerator(project, extension)
         val ex = assertFailsWith<RuntimeException> {
-            generator.generateSecrets()
+            SecretsGenerator().generateSecrets(propsFile, File(tmpDir, "Secrets.kt"))
         }
-        assertTrue(
-            ex.message?.contains(Constants.ERROR_NO_PROPERTIES_FOUND) == true,
-            "Should throw if no local.properties found in module or root"
-        )
+        assertTrue(ex.message!!.contains(Constants.ERROR_LOCAL_PROPERTIES_NOT_FOUND))
     }
 
     @Test
     fun `given valid propertiesfile when generateSecrets is called then create secrets file with correct package`() {
-        val project: Project = ProjectBuilder.builder().build()
-        File(project.projectDir, "local.properties").writeText("API_KEY=12345")
-        val extension = SecretsPluginExtension(project).apply {
-            outputDir = "${project.projectDir}/customSrc"
+        val project = ProjectBuilder.builder().build()
+        val propsFile = File(project.projectDir, "local.properties").apply {
+            writeText("API_KEY=12345")
         }
+        val outDir = File(project.projectDir, "customSrc/secrets")
 
-        val generator = SecretsGenerator(project, extension)
-        val secretsFile = generator.generateSecrets()
+        val secretsFile = runGenerator(propsFile, outDir)
 
         val content = secretsFile.readText()
-
-        assertTrue(
-            content.contains("package secrets"),
-            "Should generate package name 'secrets' inside Secrets.kt"
-        )
-        assertTrue(
-            content.contains("val API_KEY = \"12345\""),
-            "Should contain property from local.properties"
-        )
+        assertTrue(content.contains("package secrets"))
+        assertTrue(content.contains("const val API_KEY = \"12345\""))
         assertEquals(
-            File("${project.projectDir}/customSrc/secrets/Secrets.kt").absolutePath,
-            secretsFile.absolutePath,
-            "Secrets.kt file path should match customSrc/secrets/Secrets.kt"
+            File(outDir, Constants.SECRETS_FILE_NAME).absolutePath,
+            secretsFile.absolutePath
         )
     }
 
     @Test
     fun `given invalid keys in properties when generateSecrets is called then skip invalid keys`() {
-        val project: Project = ProjectBuilder.builder().build()
-        File(project.projectDir, "local.properties").writeText(
-            """
-            VALID_KEY=ok_value
-            invalid-key=should_skip
-            _ANOTHER=allowed
-        """.trimIndent()
-        )
-        val extension = SecretsPluginExtension(project)
+        val project = ProjectBuilder.builder().build()
+        val propsFile = File(project.projectDir, "local.properties").apply {
+            writeText(
+                """
+                VALID_KEY=ok_value
+                invalid-key=should_skip
+                _ANOTHER=allowed
+                """.trimIndent()
+            )
+        }
 
-        val generator = SecretsGenerator(project, extension)
-        val secretsFile = generator.generateSecrets()
-
+        val secretsFile = runGenerator(propsFile)
         val content = secretsFile.readText()
-        assertTrue(content.contains("val VALID_KEY = \"ok_value\""), "VALID_KEY is valid")
-        assertTrue(content.contains("val _ANOTHER = \"allowed\""), "_ANOTHER is valid as well")
-        assertFalse(
-            content.contains("invalid-key"),
-            "invalid-key is not a valid identifier; should be skipped"
-        )
+
+        assertTrue(content.contains("const val VALID_KEY = \"ok_value\""))
+        assertTrue(content.contains("const val _ANOTHER = \"allowed\""))
+        assertFalse(content.contains("invalid-key"))
     }
 }

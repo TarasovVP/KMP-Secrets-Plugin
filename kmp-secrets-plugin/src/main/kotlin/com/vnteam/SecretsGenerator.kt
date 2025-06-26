@@ -30,7 +30,14 @@ class SecretsGenerator {
         return outputFile
     }
 
-    private fun loadProperties(file: File) = Properties().apply { load(file.inputStream()) }
+    private fun loadProperties(file: File): Properties {
+        if (!file.exists()) {
+            throw RuntimeException(Constants.ERROR_LOCAL_PROPERTIES_NOT_FOUND + file.absolutePath)
+        }
+        return Properties().apply {
+            load(file.inputStream())
+        }
+    }
 
     private fun isValidKey(key: String): Boolean {
         return key.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*$"))
