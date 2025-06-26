@@ -1,13 +1,13 @@
 package com.vnteam
 
-import org.gradle.api.Project
 import java.io.File
 
-class GitIgnoreUpdater(private val project: Project) {
+class GitIgnoreUpdater(private val projectDir: File) {
 
     fun addToGitIgnore(configFile: File) {
-        val gitIgnoreFile = project.file(Constants.GITIGNORE_FILE)
-        val relativePath = configFile.relativeTo(project.projectDir).path.replace("\\", "/")
+        val gitIgnoreFile = File(projectDir, Constants.GITIGNORE_FILE)
+
+        val relativePath = configFile.relativeTo(projectDir).path.replace("\\", "/")
         if (!gitIgnoreFile.exists()) {
             gitIgnoreFile.writeText("${Constants.GITIGNORE_AUTO_GENERATED}\n$relativePath\n")
         } else {

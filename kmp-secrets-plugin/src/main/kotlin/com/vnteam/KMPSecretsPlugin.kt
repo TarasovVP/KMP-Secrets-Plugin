@@ -1,9 +1,11 @@
 package com.vnteam
 
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.kotlin.dsl.register
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import java.util.Locale
+import java.io.File
 
 class KMPSecretsPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -25,29 +27,42 @@ class KMPSecretsPlugin : Plugin<Project> {
 
     private fun configureSecretsGeneration(
         project: Project,
-        kmpExtension: KotlinMultiplatformExtension,
-        extension: SecretsPluginExtension
+        kmp: KotlinMultiplatformExtension,
+        ext: SecretsPluginExtension
     ) {
-        kmpExtension.targets.configureEach {
-            compilations.configureEach {
+        kmp.targets.configureEach {
+            val targetName = name.replaceFirstChar { it.titlecase() }
 
-                val generateSecretsTaskName =
-                    "${Constants.GENERATE_SECRETS_TASK}${
-                        target.name.replaceFirstChar {
-                            if (it.isLowerCase()) it.titlecase(
-                                Locale.getDefault()
-                            ) else it.toString()
-                        }
-                    }${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}"
-                val generateSecretsTask = project.tasks.register(generateSecretsTaskName) {
-                    doFirst {
-                        val generator = SecretsGenerator(project, extension)
-                        val generatedFile = generator.generateSecrets()
-                        GitIgnoreUpdater(project).addToGitIgnore(generatedFile)
-                    }
+            compilations.configureEach {
+                val compilationName = name.replaceFirstChar { it.titlecase() }
+
+                val taskName = buildString {
+                    append(Constants.GENERATE_SECRETS_TASK)
+                    append(targetName)
+                    append(compilationName)
                 }
-                compileKotlinTask.dependsOn(generateSecretsTask)
+
+                val taskProvider = project.tasks.register<GenerateSecretsTask>(taskName) {
+                    propertiesFile.set(findPropertiesFile(project))
+
+                    val outDir = File(ext.outputDir, Constants.SECRETS_PACKAGE_NAME)
+                    outputFile.set(File(outDir, Constants.SECRETS_FILE_NAME))
+
+                    projectDir.set(project.layout.projectDirectory)
+                }
+
+                compileKotlinTask.dependsOn(taskProvider)
             }
+        }
+    }
+
+    private fun findPropertiesFile(project: Project): File {
+        val moduleProps = project.file(Constants.LOCAL_PROPERTIES_FILE)
+        val rootProps = project.rootProject.file(Constants.LOCAL_PROPERTIES_FILE)
+        return when {
+            moduleProps.exists() -> moduleProps
+            rootProps.exists() -> rootProps
+            else -> throw GradleException(Constants.ERROR_NO_PROPERTIES_FOUND + project.name)
         }
     }
 }
