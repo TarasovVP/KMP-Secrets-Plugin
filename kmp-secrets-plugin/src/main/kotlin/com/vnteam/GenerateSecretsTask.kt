@@ -13,17 +13,19 @@ abstract class GenerateSecretsTask : DefaultTask() {
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
-    @get:InputDirectory
-    abstract val projectDir: DirectoryProperty
+    @get:OutputFile
+    @get:Optional
+    abstract val gitIgnoreFile: RegularFileProperty
 
     @TaskAction
     fun execute() {
-        val generator = SecretsGenerator()
-        val generated = generator.generateSecrets(
-            propsFile = propertiesFile.get().asFile,
-            outputFile = outputFile.get().asFile
-        )
-        GitIgnoreUpdater(projectDir = projectDir.get().asFile)
+        val generated = SecretsGenerator()
+            .generateSecrets(
+                propsFile   = propertiesFile.get().asFile,
+                outputFile  = outputFile.get().asFile
+            )
+
+        GitIgnoreUpdater(gitIgnoreFile.get().asFile)
             .addToGitIgnore(generated)
     }
 }

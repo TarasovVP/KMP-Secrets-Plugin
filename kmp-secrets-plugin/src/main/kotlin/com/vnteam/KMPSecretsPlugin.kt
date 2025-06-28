@@ -48,7 +48,7 @@ class KMPSecretsPlugin : Plugin<Project> {
                     val outDir = File(ext.outputDir, Constants.SECRETS_PACKAGE_NAME)
                     outputFile.set(File(outDir, Constants.SECRETS_FILE_NAME))
 
-                    projectDir.set(project.layout.projectDirectory)
+                    gitIgnoreFile.set(project.layout.projectDirectory.file(Constants.GITIGNORE_FILE))
                 }
 
                 compileKotlinTask.dependsOn(taskProvider)

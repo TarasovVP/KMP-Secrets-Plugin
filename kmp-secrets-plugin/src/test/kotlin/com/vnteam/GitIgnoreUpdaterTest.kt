@@ -3,6 +3,7 @@ package com.vnteam
 import org.gradle.testfixtures.ProjectBuilder
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class GitIgnoreUpdaterTest {
@@ -18,11 +19,11 @@ class GitIgnoreUpdaterTest {
             writeText("// test content")
         }
 
-        GitIgnoreUpdater(project.projectDir).addToGitIgnore(configFile)
+        GitIgnoreUpdater(gitignoreFile).addToGitIgnore(configFile)
 
-        assertTrue(gitignoreFile.exists(), ".gitignore должен быть создан")
+        assertTrue(gitignoreFile.exists())
         val content = gitignoreFile.readText()
-        val relativePath = configFile.relativeTo(project.projectDir).path.replace("\\", "/")
+        val relativePath = configFile.relativeTo(project.projectDir).invariantSeparatorsPath
         assertTrue(content.contains(Constants.GITIGNORE_AUTO_GENERATED))
         assertTrue(content.contains(relativePath))
     }
@@ -39,9 +40,9 @@ class GitIgnoreUpdaterTest {
             writeText("// test content")
         }
 
-        GitIgnoreUpdater(project.projectDir).addToGitIgnore(configFile)
+        GitIgnoreUpdater(gitignoreFile).addToGitIgnore(configFile)
 
-        val relativePath = configFile.relativeTo(project.projectDir).path.replace("\\", "/")
+        val relativePath = configFile.relativeTo(project.projectDir).invariantSeparatorsPath
         assertTrue(gitignoreFile.readText().contains(relativePath))
     }
 
@@ -63,8 +64,8 @@ class GitIgnoreUpdaterTest {
             writeText("// test content")
         }
 
-        GitIgnoreUpdater(project.projectDir).addToGitIgnore(configFile)
+        GitIgnoreUpdater(gitignoreFile).addToGitIgnore(configFile)
 
-        assertTrue(gitignoreFile.readLines().size == 2)
+        assertEquals(2, gitignoreFile.readLines().size)
     }
 }
