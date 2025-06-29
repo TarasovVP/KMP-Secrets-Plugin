@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "io.github.tarasovvp"
-version = "1.2.0"
+version = "1.3.0"
 
 dependencies {
     compileOnly(kotlin("gradle-plugin"))
@@ -30,12 +30,24 @@ mavenPublishing {
     coordinates(
         groupId = "io.github.tarasovvp",
         artifactId = "kmp-secrets-plugin",
-        version = "1.2.0"
+        version = "1.3.0"
     )
 
     pom {
         name.set("KMP Secrets Plugin")
-        description.set("Gradle plugin for generating secrets in Kotlin Multiplatform projects.")
+        description.set(
+            "KMP Secrets Plugin is a Gradle plugin that converts key-value "
+                    + "pairs from local.properties into a type-safe Kotlin object "
+                    + "(Secrets) for Kotlin Multiplatform projects. The plugin works "
+                    + "on Android, iOS, Desktop and Web targets, supports "
+                    + "Configuration Cache, automatically adds the generated "
+                    + "Secrets.kt file to .gitignore, and allows configuring the "
+                    + "output directory. Default output path is "
+                    + "src/commonMain/kotlin/secrets/Secrets.kt. To use, apply "
+                    + "id(\"io.github.tarasovvp.kmp-secrets-plugin\") and add your "
+                    + "secrets to local.properties in the corresponding module. "
+                    + "Published under Apache-2.0."
+        )
         url.set("https://github.com/TarasovVP/KMP-Secrets-Plugin")
         inceptionYear.set("2024")
 
