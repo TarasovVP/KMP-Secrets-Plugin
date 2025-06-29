@@ -20,7 +20,8 @@ class SecretsGenerator {
             properties.forEach { (keyAny, value) ->
                 val key = keyAny.toString()
                 if (isValidKey(key)) {
-                    appendLine("    const val $key = \"$value\"")
+                    val escaped = escapeForKotlin(value.toString())
+                    appendLine("    const val $key = \"$escaped\"")
                 }
             }
 
@@ -42,4 +43,20 @@ class SecretsGenerator {
     private fun isValidKey(key: String): Boolean {
         return key.matches(Regex("^[a-zA-Z_][a-zA-Z0-9_]*$"))
     }
+
+    private fun escapeForKotlin(raw: String): String =
+        buildString {
+            raw.forEach { ch ->
+                when (ch) {
+                    '\\'  -> append("\\\\")
+                    '\"'  -> append("\\\"")
+                    '\n'  -> append("\\n")
+                    '\r'  -> append("\\r")
+                    '\t'  -> append("\\t")
+                    '\b'  -> append("\\b")
+                    '\u000C' -> append("\\f")
+                    else  -> append(ch)
+                }
+            }
+        }
 }
