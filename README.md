@@ -3,7 +3,7 @@
 Gradle plugin that turns key-value pairs from local.properties into a type-safe Kotlin object for Kotlin Multiplatform projects.
 
 Group/ID: io.github.tarasovvp : kmp-secrets-plugin  
-Latest:  ![image](https://github.com/user-attachments/assets/c7cbba26-bd7e-41e3-a4ec-152527a6e6ca)   
+Latest:  ![Maven Central](https://img.shields.io/maven-central/v/io.github.tarasovvp/kmp-secrets-plugin)   
 License: Apache-2.0
 
 ---
