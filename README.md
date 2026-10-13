@@ -1,19 +1,25 @@
 # KMP Secrets Plugin
 
-Gradle plugin that turns key-value pairs from local.properties into a type-safe Kotlin object for Kotlin Multiplatform projects.
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.tarasovvp/kmp-secrets-plugin)](https://central.sonatype.com/artifact/io.github.tarasovvp/kmp-secrets-plugin)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-Group/ID: io.github.tarasovvp : kmp-secrets-plugin  
-Latest:  ![Maven Central](https://img.shields.io/maven-central/v/io.github.tarasovvp/kmp-secrets-plugin)   
-License: Apache-2.0
+A Gradle plugin that generates a type-safe Kotlin object from `local.properties` for Kotlin Multiplatform projects.
+It works with Android, iOS, Desktop, and Web targets while keeping generated values out of version control.
 
----
+## Features
+
+- Generates `secrets.Secrets` before Kotlin compilation.
+- Uses a module-level `local.properties`, with a fallback to the root project file.
+- Generates string constants and escapes quotes, slashes, and control characters.
+- Adds the generated `Secrets.kt` path to `.gitignore` automatically.
+- Supports a custom output directory.
+- Is available from Maven Central.
 
 ## Installation
 
-### 1. Configure repositories
-Add to your `settings.gradle.kts` file:
+Add Maven Central to plugin resolution in `settings.gradle.kts`:
 
-<pre>
+```kotlin
 pluginManagement {
     repositories {
         mavenCentral()
@@ -21,80 +27,95 @@ pluginManagement {
         google()
     }
 }
-</pre>
+```
 
-### 2. Apply the plugin
-Add to your module's `build.gradle.kts` (only where needed):
+Apply the plugin to the KMP module that needs the generated values:
 
-<pre>
+```kotlin
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
-    id("io.github.tarasovvp.kmp-secrets-plugin") version "1.2.0"
+    id("io.github.tarasovvp.kmp-secrets-plugin") version "1.3.0"
 }
-</pre>
+```
 
----
+## Quick start
 
-## Quick Start
+Add the values to `local.properties` in the same module:
 
-1. **Put secrets in `local.properties` of the same module**  
-   *(the root file is used only if the module file is absent)*
-<pre>
+```properties
 API_KEY=your_key
 DEBUG=true
-</pre>
+```
 
-2. **Build the project** with any compile/assemble task, e.g.:
-<pre>
+If the module does not contain `local.properties`, the plugin uses the file from the project root.
+Build the project with any compile or assemble task:
+
+```shell
 ./gradlew assemble
-</pre>
+```
 
-3. The plugin generates the file  
-   `<moduleDir>/<outputDir>/secrets/Secrets.kt`
+The plugin generates `src/commonMain/kotlin/secrets/Secrets.kt`:
 
-   * By default, `outputDir` is `src/commonMain/kotlin`, so the file is created at  
-     `<moduleDir>/src/commonMain/kotlin/secrets/Secrets.kt`.
-   * If you override `outputDir` in the `secrets { … }` block, the file will be created in that custom location, e.g.:
-<pre>
-secrets {
+```kotlin
+package secrets
+
+object Secrets {
+    const val API_KEY = "your_key"
+    const val DEBUG = "true"
+}
+```
+
+The generated values can then be accessed from common code:
+
+```kotlin
+import secrets.Secrets
+
+val apiKey = Secrets.API_KEY
+```
+
+## Configuration
+
+The default output directory is `src/commonMain/kotlin`. To change it, configure `secretsConfig` in the module's `build.gradle.kts`:
+
+```kotlin
+secretsConfig {
     outputDir = "$projectDir/generatedSecrets"
 }
-</pre>
+```
 
-4. **Git ignore is handled automatically**
+The `secrets` package and `Secrets.kt` file are created inside that directory.
 
-* If a `.gitignore` exists, the relative path to `Secrets.kt` is appended.  
-* If none exists, the plugin creates one with the path included.  
+## Escaping
 
-Your secrets will never be committed by mistake.
+Special characters in property values are escaped when Kotlin code is generated:
 
----
-
-## Notes
-
-Preferred format:
-<pre>
-API_KEY=sample_secret_data
-</pre>
-
-With special characters:
-<pre>
+```properties
 QUOTED=He said "Hello"
 WINDOWS_PATH=C:\Tools\bin
-</pre>
+```
 
-Becomes: 
-<pre>
-object Secrets { 
-    const val QUOTED = "He said \"Hello\"" 
-    const val WINDOWS_PATH = "C:\\Tools\\bin" 
+```kotlin
+object Secrets {
+    const val QUOTED = "He said \"Hello\""
+    const val WINDOWS_PATH = "C:\\Tools\\bin"
 }
-</pre>
+```
 
----
+## Security note
+
+The plugin reduces the risk of committing local values by adding the generated file to `.gitignore`.
+It does not encrypt secrets or prevent them from being extracted from a compiled application. Do not treat client-side values as a secure storage mechanism for server credentials.
 
 ## Compatibility
 
 - Gradle 8.2+
-- Kotlin 1.9/2.x
-- Android/iOS/Desktop/Web targets
+- Kotlin 1.9 and 2.x
+- Android, iOS, Desktop, and Web targets
+
+## Further reading
+
+Read [Automating Work with Secrets in Kotlin Multiplatform](https://medium.com/@vptarasov/automating-work-with-secrets-in-kotlin-multiplatform-a2b4c587180b) for the motivation, implementation details, and publishing process behind the plugin.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
